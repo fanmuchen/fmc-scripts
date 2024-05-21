@@ -4,15 +4,17 @@
 # 并排除特定的目录。生成的文件包括一个文件树结构和每个文件的内容。用户可以选择将生成的文本复制到剪贴板。
 
 # 输出文件名
-output_file="merged_code.md"
+output_file="gist.md"
 
 # 清空输出文件
 > "$output_file"
 
 # 描述文件内容
-cat <<EOF >> "$output_file"
+cat <<- 'EOF' >> "$output_file"
+
 这是一个合并的代码文件，包含项目中的所有源代码文件。
 您可以在此文件中查看每个文件的内容以及它们在项目中的位置。
+
 EOF
 
 echo "" >> "$output_file"
@@ -28,25 +30,16 @@ exclude_patterns=(
     "node_modules"
     ".git"
     ".github"
+    "gist.*"
 )
 
-# 构建 find 命令的参数
-find_args=()
-
-# 添加要包含的文件模式
-for pattern in "${file_patterns[@]}"; do
-    find_args+=(-name "$pattern" -o)
-done
-# 移除最后一个 -o
-unset 'find_args[${#find_args[@]}-1]'
-
-# 添加要排除的目录模式
-for pattern in "${exclude_patterns[@]}"; do
-    find_args+=(-not -path "*/$pattern/*")
-done
-
 # 查找符合条件的文件
-files=$(find . "${find_args[@]}")
+files=$(find . \( -name "${file_patterns[0]}" -o -name "${file_patterns[1]}" \) -type f)
+
+# 过滤掉需要排除的目录
+for pattern in "${exclude_patterns[@]}"; do
+    files=$(echo "$files" | grep -v "/$pattern/")
+done
 
 # 生成文件树并写入输出文件
 echo "## 文件树" >> "$output_file"
@@ -91,4 +84,3 @@ if [[ -z "$response" ]]; then
 else
     echo "未将文本复制到剪贴板。"
 fi
-
